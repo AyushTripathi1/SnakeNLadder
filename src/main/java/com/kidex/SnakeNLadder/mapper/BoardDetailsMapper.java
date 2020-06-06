@@ -14,9 +14,9 @@ public interface BoardDetailsMapper {
     BoardDetailsMapper INSTANCE = Mappers.getMapper(BoardDetailsMapper.class);
 
     @Mappings({
-            @Mapping(target = "snakesArray", expression = "java(createBoardRequest.getSnakes().toString())"),
-            @Mapping(target = "laddersArray",  expression = "java(createBoardRequest.getLadders().toString())"),
-            @Mapping(target = "bombsArray",  expression = "java(createBoardRequest.getBombs().toString())")
+            @Mapping(target = "snakes", expression = "java(createBoardRequest.getSnakes().toString())"),
+            @Mapping(target = "ladders",  expression = "java(createBoardRequest.getLadders().toString())"),
+            @Mapping(target = "bombs",  expression = "java(createBoardRequest.getBombs().toString())")
     })
     BoardDTO createBoardRequestToBoardDTO(final CreateBoardRequest createBoardRequest);
 

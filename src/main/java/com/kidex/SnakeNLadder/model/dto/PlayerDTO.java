@@ -29,9 +29,13 @@ public class PlayerDTO extends AbstractEntity {
     @Builder.Default
     private Boolean nextMove = Boolean.TRUE;
 
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean active = Boolean.FALSE;
+
     @Column(name = "current_position")
     @Builder.Default
-    private Long currentPosition = 0L;
+    private Integer currentPosition = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "game_id")

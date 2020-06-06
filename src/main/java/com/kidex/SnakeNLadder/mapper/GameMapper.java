@@ -19,6 +19,9 @@ public interface GameMapper {
     GameMapper INSTANCE = Mappers.getMapper(GameMapper.class);
 
 
+    @Mappings({
+            @Mapping(target= "boardDto", source = "boardDto")
+    })
     GameDTO setupGameRequestOnBoard(final BoardDTO boardDto, final List<PlayerDTO> playerDTOList);
 
 }

@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
+
 @Log4j2
 @Service
 public class GameRepoService extends AbstractRepoService<GameDTO, Integer> {
@@ -24,4 +26,19 @@ public class GameRepoService extends AbstractRepoService<GameDTO, Integer> {
     }
 
 
+    public GameDTO getGameDTOById(@NonNull final Integer gameRefId) {
+
+        log.info("DB query to fetch the boards");
+        GameDTO gameDTO = null;
+
+        try {
+            gameDTO = gameRepository.getGameDTOById(gameRefId);
+        } catch (Exception ex) {
+            throw new DataAccessException("Error while fetching data from DB", ex);
+        }
+        if (Objects.isNull(gameDTO)) {
+            throw new DataAccessException("No Game found for game id" + gameRefId);
+        }
+        return gameDTO;
+    }
 }

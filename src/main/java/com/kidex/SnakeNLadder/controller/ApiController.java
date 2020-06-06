@@ -4,11 +4,13 @@ import com.kidex.SnakeNLadder.enums.Status;
 import com.kidex.SnakeNLadder.exception.SavingDataException;
 import com.kidex.SnakeNLadder.exception.ValidationException;
 import com.kidex.SnakeNLadder.request.CreateBoardRequest;
+import com.kidex.SnakeNLadder.request.PlayGameRequest;
 import com.kidex.SnakeNLadder.request.SetupGame;
 import com.kidex.SnakeNLadder.response.ServiceResponse;
 import com.kidex.SnakeNLadder.response.SetupBoardResponse;
 import com.kidex.SnakeNLadder.response.SetupGameResponse;
 import com.kidex.SnakeNLadder.service.BoardService;
+import com.kidex.SnakeNLadder.service.GameplayService;
 import com.kidex.SnakeNLadder.service.ValidationService;
 import lombok.NonNull;
 import lombok.extern.log4j.Log4j2;
@@ -31,6 +33,9 @@ public class ApiController {
 
     @Autowired
     private ValidationService validationService;
+
+    @Autowired
+    private GameplayService gameplayService;
 
     @PostMapping("setupBoard")
     public ServiceResponse createBoard(
@@ -73,4 +78,16 @@ public class ApiController {
                 HttpStatus.OK);
     }
 
+    @PostMapping("playTheGame")
+    public ServiceResponse playGame(
+            @RequestBody @NonNull @Valid final PlayGameRequest playGameRequest) {
+        String gameRefId;
+        try {
+            return new ServiceResponse<>(gameplayService.makeMove(playGameRequest), HttpStatus.OK);
+        } catch (Exception ex) {
+            return new ServiceResponse<>(
+                    SetupGameResponse.builder().status(Status.FAILURE).message("Invalid Request")
+                            .build(), HttpStatus.BAD_REQUEST);
+        }
+    }
 }
