@@ -30,8 +30,8 @@ public class ValidationService {
     }
 
     private boolean validateListOfPairs(final Integer dimensionalProduct,
-            final List<List<Long>> val) {
-        List<List<Long>>
+            final List<List<Integer>> val) {
+        List<List<Integer>>
                 invalidData =
                 val.stream().filter(pairVal -> pairVal.get(0) <= 1
                         || pairVal.get(0) >= dimensionalProduct || pairVal.get(1) <= 1
@@ -39,8 +39,8 @@ public class ValidationService {
         return invalidData.isEmpty();
     }
 
-    private boolean validateBombs(final Integer dimensionalProduct, final List<Long> val) {
-        List<Long>
+    private boolean validateBombs(final Integer dimensionalProduct, final List<Integer> val) {
+        List<Integer>
                 invalidData =
                 val.stream().filter(obj -> obj <= 1 && obj >= dimensionalProduct)
                         .collect(Collectors.toList());

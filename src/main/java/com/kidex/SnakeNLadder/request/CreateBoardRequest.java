@@ -19,12 +19,12 @@ public class CreateBoardRequest {
     private Integer dimension;
 
     @JsonProperty("snakes")
-    private List<List<Long>> snakes;
+    private List<List<Integer>> snakes;
 
     @JsonProperty("ladders")
-    private List<List<Long>> ladders;
+    private List<List<Integer>> ladders;
 
     @JsonProperty("bombs")
-    private List<Long> bombs;
+    private List<Integer> bombs;
 
 }

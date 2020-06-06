@@ -54,7 +54,8 @@ public class BoardService {
             GameDTO gameDTO = GameMapper.INSTANCE.setupGameRequestOnBoard(boardDTO, playerDTOList);
             boardDTO.getGameDTOList().add(gameDTO);
             playerDTOList.forEach(player->player.setGameDto(gameDTO));
-            return gameRepoService.getRepo().save(gameDTO).getId().toString();
+            BoardDTO boardDTOUpdated = boardReposervice.getRepo().save(boardDTO);
+            return boardDTOUpdated.getGameDTOList().get(boardDTOUpdated.getGameDTOList().size()-1).getId().toString();
 
         } catch (DataAccessException ex) {
             throw new ValidationException(
