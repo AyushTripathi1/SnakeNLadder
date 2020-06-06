@@ -42,8 +42,8 @@ public class GameplayService {
         PlayerDTO
                 currentPlayer =
                 playerDTOHashMapPlayerNumberWise.get(playGameRequest.getPlayerInGameId());
-        if (checkPlayerExists(playGameRequest.getPlayerInGameId(), playerDTOHashMapPlayerNumberWise)
-                && checkValidMove(playGameRequest.getSteps(), currentPlayer)) {
+        if (checkPlayerExists(playGameRequest.getPlayerInGameId(),
+                playerDTOHashMapPlayerNumberWise)) {
             return generateResponse(gameDTO, playerDTOHashMapPositionWise, currentPlayer,
                     playGameRequest);
         } else {
@@ -66,10 +66,6 @@ public class GameplayService {
         return playerDTOMap.containsKey(playerInGameId);
     }
 
-    private boolean checkValidMove(final Integer steps, final PlayerDTO playerDTO) {
-        return startMoveCheck(steps, playerDTO) || notStartMove(steps, playerDTO);
-    }
-
     private Map<Integer, PlayerDTO> makePlayersMapOfCurrentGame(final GameDTO gameDTO) {
         return gameDTO.getPlayerDTOList().stream()
                 .collect(Collectors.toMap(PlayerDTO::getPlayerNumber, PlayerDTO -> PlayerDTO));
@@ -78,7 +74,8 @@ public class GameplayService {
     private Map<Integer, List<PlayerDTO>> makePlayersMapOfCurrentGamePositionWise(
             final GameDTO gameDTO) {
         Map<Integer, List<PlayerDTO>> listMap = new HashMap<>();
-        for (PlayerDTO playerDTO : gameDTO.getPlayerDTOList()) {
+        for (PlayerDTO playerDTO : gameDTO.getPlayerDTOList().stream().filter(PlayerDTO::getActive)
+                .collect(Collectors.toList())) {
             if (listMap.containsKey(playerDTO.getCurrentPosition())) {
                 listMap.get(playerDTO.getCurrentPosition()).add(playerDTO);
             } else {
@@ -92,7 +89,7 @@ public class GameplayService {
     }
 
     private boolean startMoveCheck(final Integer steps, final PlayerDTO playerDTO) {
-        return steps.equals(6) && playerDTO.getCurrentPosition().equals(0);
+        return steps.equals(6) && !playerDTO.getActive();
     }
 
     private boolean notStartMove(final Integer steps, final PlayerDTO playerDTO) {
@@ -100,13 +97,22 @@ public class GameplayService {
     }
 
     private GameplayResponse generateResponse(final GameDTO gameDTO,
-            final Map<Integer, List<PlayerDTO>> positionWisePlayerMap, final PlayerDTO currentPlayer,
-            final PlayGameRequest playGameRequest) {
-        List<PlayerDTO> playerDTOListToMap = new ArrayList<>();
+            final Map<Integer, List<PlayerDTO>> positionWisePlayerMap,
+            final PlayerDTO currentPlayer, final PlayGameRequest playGameRequest) {
         List<PlayerWiseResponse> playerWiseResponseList = new ArrayList<>();
-        if (stepToSkip(currentPlayer)) {
+        if (stepToSkip(currentPlayer) || startMoveCheck(playGameRequest.getSteps(),
+                currentPlayer)) {
             //add db update call to make current player next move to set true
-            playerDTOListToMap.add(currentPlayer);
+            PlayerWiseResponse playerWiseResponse = new PlayerWiseResponse();
+            playerWiseResponse.setNewPosition(currentPlayer.getCurrentPosition());
+            playerWiseResponse.setPlayerNumber(currentPlayer.getPlayerNumber());
+            playerWiseResponse.setTracedThrough(new ArrayList<Integer>() {{
+                add(currentPlayer.getCurrentPosition());
+            }});
+            playerWiseResponseList.add(playerWiseResponse);
+            currentPlayer.setActive(Boolean.TRUE);
+            currentPlayer.setNextMove(Boolean.TRUE);
+            playerRepoService.getRepo().save(currentPlayer);
         } else {
             PlayerWiseResponse playerWiseResponse = new PlayerWiseResponse();
             List<Integer> stack = new ArrayList<>();
@@ -117,10 +123,12 @@ public class GameplayService {
             stack.add(newPosition);
             //check ladder/snake present to update current position
             Integer finalPos = updatePosSnakeLadder(currentPlayer, newPosition, gameDTO);
-            stack.add(finalPos);
+            if (!finalPos.equals(newPosition)) {
+                stack.add(finalPos);
+            }
             //final update coincinding objects
             playerWiseResponseList
-                    .addAll(updateCoincidingObject(positionWisePlayerMap, newPosition, gameDTO));
+                    .addAll(updateCoincidingObject(positionWisePlayerMap, finalPos, gameDTO));
             playerWiseResponse.setPlayerNumber(currentPlayer.getPlayerNumber());
             playerWiseResponse.setNewPosition(finalPos);
             playerWiseResponse.setTracedThrough(stack);
@@ -176,8 +184,9 @@ public class GameplayService {
             final GameDTO gameDTO) {
         List<PlayerWiseResponse> playerWiseResponses = new ArrayList<>();
         if (playerDTOMap.containsKey(position)) {
-            for(PlayerDTO updatePlayer: playerDTOMap.get(position)) {
-                playerWiseResponses.add(updatePlayerPositionToNearestSnakeTail(updatePlayer, gameDTO));
+            for (PlayerDTO updatePlayer : playerDTOMap.get(position)) {
+                playerWiseResponses
+                        .add(updatePlayerPositionToNearestSnakeTail(updatePlayer, gameDTO));
             }
         }
         return playerWiseResponses;
@@ -197,12 +206,18 @@ public class GameplayService {
         List<Integer> stack = new ArrayList<>();
         stack.add(newPlayer.getCurrentPosition());
         Collections.sort(snakesStartingPoint);
-        Integer
-                newPos =
-                Collections.binarySearch(snakesStartingPoint, newPlayer.getCurrentPosition() - 1);
-        stack.add(newPos);
-        Integer finalPos = snakesMap.get(newPos);
+        int newPos = 0;
+        while (snakesStartingPoint.get(newPos) <= newPlayer.getCurrentPosition()) {
+            newPos += 1;
+        }
+        stack.add(snakesStartingPoint.get(newPos - 1));
+        Integer finalPos = snakesMap.get(snakesStartingPoint.get(newPos - 1));
         stack.add(finalPos);
+        newPos = updatePosSnakeLadder(newPlayer, finalPos, gameDTO);
+        if (finalPos.intValue() != newPos) {
+            stack.add(newPos);
+            finalPos = newPos;
+        }
         newPlayer.setCurrentPosition(finalPos);
         playerWiseResponse.setTracedThrough(stack);
         playerWiseResponse.setPlayerNumber(newPlayer.getPlayerNumber());
